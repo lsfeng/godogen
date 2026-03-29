@@ -127,6 +127,12 @@ Complete architecture reference. Always written in full, even for incremental up
 - **Signals received:** HurtBox.area_entered -> _on_hurt_entered
 - **Instantiates:** Bullet
 
+### AudioManager
+- **File:** res://scripts/audio_manager.gd
+- **Extends:** Node
+- **Autoload:** yes
+- **Purpose:** Music playback, SFX pooling
+
 ## Signal Map
 
 - Player:HurtBox.area_entered -> PlayerController._on_hurt_entered
@@ -219,11 +225,7 @@ func _set_owners(node: Node, owner: Node) -> void:
 			_set_owners(c, owner)
 ```
 
-**CRITICAL: Build order matters.** Scenes that instantiate other scenes must be built AFTER their dependencies. A scene that loads `player.tscn` will fail if `player.tscn` doesn't exist yet. Always build leaf scenes (no child scenes) first, then parents:
-```bash
-timeout 60 godot --headless --script scenes/build_player.gd   # leaf — no children
-timeout 60 godot --headless --script scenes/build_main.gd     # parent — loads player.tscn
-```
+**CRITICAL: Build order is specified in STRUCTURE.md.** The `## Build Order` section lists the exact sequence. Follow it mechanically — do not infer or reorder.
 
 ## UI Overlay Architecture
 
@@ -249,6 +251,61 @@ Main (Node3D or Node2D)
 - `custom_minimum_size` for fixed dimensions
 
 For pause menus, set `process_mode = Node.PROCESS_MODE_ALWAYS` on the CanvasLayer so it runs during pause.
+
+## Audio Architecture
+
+When the game needs audio, add an AudioManager autoload:
+
+**In `project.godot`:**
+```ini
+[autoload]
+AudioManager="*res://scripts/audio_manager.gd"
+```
+
+**Script stub `scripts/audio_manager.gd`:**
+```gdscript
+extends Node
+## Singleton: manages music playback and SFX pooling
+
+var _music_player: AudioStreamPlayer
+var _sfx_pool: Array[AudioStreamPlayer] = []
+const SFX_POOL_SIZE := 8
+
+func _ready() -> void:
+    _music_player = AudioStreamPlayer.new()
+    _music_player.bus = &"Music"
+    add_child(_music_player)
+    for i in range(SFX_POOL_SIZE):
+        var p := AudioStreamPlayer.new()
+        p.bus = &"SFX"
+        add_child(p)
+        _sfx_pool.append(p)
+
+func play_music(stream: AudioStream, loop: bool = true) -> void:
+    _music_player.stream = stream
+    if stream is AudioStreamOGGVorbis:
+        stream.loop = loop
+    _music_player.play()
+
+func play_sfx(stream: AudioStream) -> void:
+    for p in _sfx_pool:
+        if not p.playing:
+            p.stream = stream
+            p.play()
+            return
+```
+
+The scaffold also creates audio directories. Add to the scaffold workflow after step 7 ("Write script stubs"):
+
+```markdown
+7b. **Create audio directories** (when game needs audio):
+    ```bash
+    mkdir -p assets/audio/sfx assets/audio/music
+    ```
+
+```
+
+**Audio bus note:** The `&"SFX"` and `&"Music"` buses referenced in AudioManager are optional. Godot falls back to "Master" if they don't exist. If per-bus volume control is needed, the scaffold creates a `default_bus_layout.tres` — but for most projects, the Master bus suffices and bus creation can be skipped.
 
 ## Architecture Rules
 
@@ -284,6 +341,19 @@ Assets are generated AFTER scaffold. Include an `## Asset Hints` section at the 
 ```
 
 Be specific about type (model, texture, background, sprite), approximate size, and visual role. Don't describe style — the asset planner chooses that.
+
+### Build Order
+
+The scaffold emits an explicit build order in STRUCTURE.md based on scene dependency analysis. Leaf scenes (no child scene references) first, parents after:
+
+```markdown
+## Build Order
+1. scenes/build_player.gd → scenes/player.tscn
+2. scenes/build_enemy.gd → scenes/enemy.tscn
+3. scenes/build_main.gd → scenes/main.tscn (depends: player.tscn, enemy.tscn)
+```
+
+The task executor follows this order mechanically. Do not rely on the executor to infer dependencies.
 
 ## What NOT to Include
 
