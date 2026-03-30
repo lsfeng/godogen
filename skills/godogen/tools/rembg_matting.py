@@ -193,7 +193,7 @@ def remove_background(img: np.ndarray, img_pil: Image.Image,
 
     elif regime == "trust":
         # Trust mask fully: never remove fg pixels (mask > 0.5)
-        is_bg = (alpha_color < bt) & (mask_soft < 0.5)
+        is_bg = (alpha_color < bt) | (mask_soft < 0.05)
         alpha = np.where(is_bg, alpha_color,
                          np.maximum(alpha_color, mask_soft))
 
