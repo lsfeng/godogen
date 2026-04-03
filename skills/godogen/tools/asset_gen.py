@@ -22,7 +22,7 @@ from google import genai
 from google.genai import types
 from PIL import Image
 
-from tripo3d import MODEL_V3, image_to_glb
+from tripo3d import MODEL_P1, MODEL_V31, image_to_glb
 
 TOOLS_DIR = Path(__file__).parent
 BUDGET_FILE = Path("assets/budget.json")
@@ -62,33 +62,15 @@ def record_spend(cost_cents: int, service: str):
     BUDGET_FILE.write_text(json.dumps(budget, indent=2) + "\n")
 
 QUALITY_PRESETS = {
-    "lowpoly": {
-        "face_limit": 5000,
-        "smart_low_poly": True,
+    "default": {
+        "model_version": MODEL_P1,
         "texture_quality": "standard",
-        "geometry_quality": "standard",
-        "cost_cents": 40,
-    },
-    "medium": {
-        "face_limit": 20000,
-        "smart_low_poly": False,
-        "texture_quality": "standard",
-        "geometry_quality": "standard",
-        "cost_cents": 30,
+        "cost_cents": 50,
     },
     "high": {
-        "face_limit": None,
-        "smart_low_poly": False,
+        "model_version": MODEL_V31,
         "texture_quality": "detailed",
-        "geometry_quality": "standard",
         "cost_cents": 40,
-    },
-    "ultra": {
-        "face_limit": None,
-        "smart_low_poly": False,
-        "texture_quality": "detailed",
-        "geometry_quality": "detailed",
-        "cost_cents": 60,
     },
 }
 
@@ -287,7 +269,7 @@ def cmd_glb(args):
         result_json(False, error=f"Image not found: {image_path}")
         sys.exit(1)
 
-    preset = QUALITY_PRESETS.get(args.quality, QUALITY_PRESETS["medium"])
+    preset = QUALITY_PRESETS.get(args.quality, QUALITY_PRESETS["default"])
     check_budget(preset["cost_cents"])
 
     output = Path(args.output)
@@ -299,11 +281,8 @@ def cmd_glb(args):
         image_to_glb(
             image_path,
             output,
-            model_version=MODEL_V3,
-            face_limit=preset["face_limit"],
-            smart_low_poly=preset["smart_low_poly"],
+            model_version=preset["model_version"],
             texture_quality=preset["texture_quality"],
-            geometry_quality=preset["geometry_quality"],
         )
     except Exception as e:
         result_json(False, error=str(e))
@@ -352,7 +331,7 @@ def main():
 
     p_glb = sub.add_parser("glb", help="Convert PNG to GLB 3D model (30-60 cents)")
     p_glb.add_argument("--image", required=True, help="Input PNG path")
-    p_glb.add_argument("--quality", default="medium", choices=list(QUALITY_PRESETS.keys()), help="Quality preset")
+    p_glb.add_argument("--quality", default="default", choices=list(QUALITY_PRESETS.keys()), help="Quality preset")
     p_glb.add_argument("-o", "--output", required=True, help="Output GLB path")
     p_glb.set_defaults(func=cmd_glb)
 

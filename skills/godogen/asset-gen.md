@@ -121,12 +121,14 @@ python3 ${CLAUDE_SKILL_DIR}/tools/rembg_matting.py \
 
 Repeat from step 2 using the same reference image. Each new animation costs 7¢ (Gemini pose) + video duration × 5¢.
 
-### Convert image to GLB (30-60 cents)
+### Convert image to GLB (40-50 cents)
 
 ```bash
 python3 ${CLAUDE_SKILL_DIR}/tools/asset_gen.py glb \
-  --image assets/img/car.png --quality medium -o assets/glb/car.glb
+  --image assets/img/car.png -o assets/glb/car.glb
 ```
+
+`--quality`: `default` (P1, 50¢) or `high` (v3.1 + HD textures, 40¢)
 
 ### Set budget
 
@@ -153,13 +155,11 @@ Progress goes to stderr.
 | Image | --model gemini --size 1K | 7 cents | References, characters, 3D refs |
 | Image | --model gemini --size 2K | 10 cents | Backgrounds, title screens |
 | Image | --model gemini --size 4K | 15 cents | Large maps, panoramas |
-| GLB | medium | 30 cents | 20k faces, good default |
-| GLB | lowpoly | 40 cents | 5k faces, smart topology |
-| GLB | high | 40 cents | Adaptive faces, detailed textures (+10c) |
-| GLB | ultra | 60 cents | Detailed textures + geometry (+10c +20c) |
+| GLB | default | 50 cents | P1 model, fast, game-optimized topology |
+| GLB | high | 40 cents | v3.1, HD textures |
 | Video | --duration N | 5¢ × N seconds | Pose frame as starting image |
 
-A full 3D asset (Gemini 1K image + GLB) costs 37 cents at medium quality. A texture (Grok) is 2 cents. A background is 2¢ (Grok, simple) or 10¢ (Gemini 2K, precise layout). A 3-second animation costs 24 cents (7¢ Gemini ref + 7¢ Gemini pose + 10¢ video); additional animations from the same ref cost 7¢ pose + video.
+A full 3D asset (Gemini 1K image + GLB) costs 47 cents at high quality. A texture (Grok) is 2 cents. A background is 2¢ (Grok, simple) or 10¢ (Gemini 2K, precise layout). A 3-second animation costs 24 cents (7¢ Gemini ref + 7¢ Gemini pose + 10¢ video); additional animations from the same ref cost 7¢ pose + video.
 
 ## Image Resolution
 
@@ -245,7 +245,7 @@ python3 ${CLAUDE_SKILL_DIR}/tools/grid_slice.py path_grid.png \
 
 Then rembg each item if transparency is needed. Supports any grid: `2x2`, `3x3`, `2x4`, etc.
 
-### 3D model reference (7c Gemini 1K) + GLB (30-60c)
+### 3D model reference (7c Gemini 1K) + GLB (40-50c)
 
 Use Gemini — clean composition and precise prompt following are critical for 3D conversion.
 
