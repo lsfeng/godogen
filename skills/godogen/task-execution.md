@@ -2,6 +2,12 @@
 
 Implementation workflow and debugging reference.
 
+## Planning Each Task
+
+`PLAN.md` from the decomposer captures risks and verification criteria — not an implementation strategy. Before coding any task (risk or main build), produce a concrete approach using the built-in planning mechanism. Decomposer tells you *what* to watch out for; the planning step decides *how* to build it.
+
+Prefer spawning the `Plan` subagent (via the `Agent` tool with `subagent_type: "Plan"`) — it returns a plan as text with no approval prompt, so execution proceeds automatically. Only use interactive plan mode if the user explicitly asks to review plans before execution.
+
 ## Phases
 
 ### Risk tasks (if PLAN.md has any)
